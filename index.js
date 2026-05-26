@@ -60,7 +60,7 @@ async function runInteractive() {
     console.log('');
     console.log(chalk.gray('  ┌──────────────────────────────────────┐'));
     console.log(chalk.gray('  │ ') + chalk.red('♥') + chalk.white(' ♠') + chalk.red(' ♦') + chalk.white(' ♣') + chalk.bold.white(' Cursor 一键汉化工具 ') + chalk.white('♣') + chalk.red(' ♦') + chalk.white(' ♠') + chalk.red(' ♥') + chalk.gray('  │'));
-    console.log(chalk.gray('  │') + chalk.green.bold('      周四学习钉钉联系我 v1.0.0       ') + chalk.gray('│'));
+    console.log(chalk.gray('  │') + chalk.green.bold('      周四学习钉钉联系我 v1.1.0       ') + chalk.gray('│'));
     console.log(chalk.gray('  │') + chalk.gray('           作者: 不辞水         ') + chalk.gray('      │'));
     console.log(chalk.gray('  │') + chalk.yellow('     🂡 All in 完美汉化，梭哈！🂡  ') + chalk.gray('     │'));
     console.log(chalk.gray('  └──────────────────────────────────────┘'));

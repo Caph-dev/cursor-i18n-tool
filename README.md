@@ -7,14 +7,18 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D16-green?logo=node.js)](https://nodejs.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue)](#)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
+[![Version](https://img.shields.io/badge/Version-1.1.0-orange)](./package.json)
 
 </div>
+
+> **本仓库为 [Wuyf5275/cursor-i18n-tool](https://github.com/Wuyf5275/cursor-i18n-tool) 的 Fork（[@Caph-dev](https://github.com/Caph-dev/cursor-i18n-tool)）**  
+> 在 upstream `main` 基础上做了词典扩充与 Tab 键位修复，详见下方 [相对主分支的改动](#-相对主分支的改动-v110)。
 
 ---
 
 ## ✨ 功能亮点
 
-- 🚀 **一键汉化** — 运行即翻译，300+ 条 UI 文案全覆盖
+- 🚀 **一键汉化** — 运行即翻译，400+ 条 UI 文案全覆盖（含设置页扩展词条）
 - ⏪ **一键还原** — 随时恢复英文原版，干净无残留
 - 🛡️ **安装不损坏** — 自动重算文件校验值，消除「安装已损坏」警告
 - 🍎 **macOS 适配** — 自动处理 Gatekeeper 签名，免手动 `xattr`
@@ -40,7 +44,7 @@
 ```
   ┌──────────────────────────────────────┐
   │ ♥ ♠ ♦ ♣ Cursor 一键汉化工具 ♣ ♦ ♠ ♥  │
-  │      周四学习钉钉联系我 v1.0.0       │
+  │      周四学习钉钉联系我 v1.1.0       │
   │           作者: 不辞水               │
   │     🂡 All in 完美汉化，梭哈！🂡       │
   └──────────────────────────────────────┘
@@ -80,8 +84,8 @@
 > 💡 终端运行 `node -v` 确认已安装 Node.js。
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/Wuyf5275/cursor-i18n-tool.git
+# 1. 克隆本 Fork（含 v1.1.0 改动）
+git clone https://github.com/Caph-dev/cursor-i18n-tool.git
 cd cursor-i18n-tool
 
 # 2. 安装依赖
@@ -108,7 +112,7 @@ cursor-i18n-tool/
 ├── index.js              # 入口文件：交互菜单 + 提权逻辑
 ├── src/
 │   ├── i18n-core.js      # 核心引擎：正则替换 + Hash 修复 + Gatekeeper
-│   ├── dict.js           # 翻译字典：300+ 条 UI 文案映射
+│   ├── dict.js           # 翻译字典：400+ 条 UI 文案映射
 │   └── platform.js       # 平台适配：路径探测 + 权限检测 + 提权
 ├── package.json
 └── README.md
@@ -125,7 +129,8 @@ cursor-i18n-tool/
 | **L1** 顽固词条 | `trickyReplacements` 逐条硬替换 | 含特殊转义、模板字符串的复杂词条 |
 | **L2** 安全长句 | `safeMegaRegex` 单次大正则 | 被引号包裹的长句（按长度降序匹配） |
 | **L3** 裸文本长句 | `longMegaRegex` 兜底匹配 | ≥20 字符的裸文本（不与代码变量冲突） |
-| **L4** 危险短词 | `riskyRegexes` 上下文感知 | 短词仅在 `children:`、`title:` 等 UI 属性中替换 |
+| **L4** 危险短词 | `riskyRegexes` 上下文感知 | 短词仅在 `children:`、`title:` 等 UI 属性中替换；键位扫描表附近自动跳过 |
+| **L4.5** 作用域替换 | `scopedReplacements` 精确字符串 | 设置侧栏 ID、编译后模板片段等 `dict` 无法覆盖的文案 |
 
 ### 文件完整性修复
 
@@ -160,6 +165,71 @@ npm run build:mac
 
 产物输出到 `dist/` 目录。
 
+## 🍴 相对主分支的改动 (v1.1.0)
+
+对比上游 [`Wuyf5275/cursor-i18n-tool`](https://github.com/Wuyf5275/cursor-i18n-tool) 的 `main` 分支，本 Fork 主要变更如下：
+
+### 1. 修复 Tab 键位被误汉化（重要）
+
+汉化后若 `workbench.desktop.main.js` 中键盘扫描表里的 `"Tab"` 被改成 `"Tab 补全"`，会导致：
+
+- `KeybindingService`: `Keyboard event cannot be dispatched`
+- 编辑器内 Tab 无法接受 Cursor Tab / IntelliSense 建议
+
+**处理方式：**
+
+| 改动 | 说明 |
+|------|------|
+| 从 `riskyShortWords` 移除 `"Tab"` | 避免 `jsxRegex` 误匹配 `[1,49,"Tab",…,"VK_TAB"]` |
+| 新增 `isProtectedKeybindingContext()` | 在 `VK_*`、扫描表元组、KeyCode 附近跳过危险短词替换 |
+| `tab:"Tab"` → `tab:"Tab 补全"` | 仅翻译设置侧栏 Tab 分区标题，不影响键位表 |
+| 扩展 UI 属性白名单 | 增加 `markdownDescription`、`aria-label` 等 |
+
+> 已向 upstream 提交 PR：[fix: prevent Tab keybinding breakage](https://github.com/Wuyf5275/cursor-i18n-tool/pull/2)（仅含 Tab 修复部分）。
+
+### 2. 词典扩充
+
+在 `src/dict.js` 中新增/扩展大量设置相关词条，例如：
+
+- **账号与外观**：Cursor Account、主题/字体、菜单栏、透明度等
+- **工作树**：Worktrees、清理策略、数量与容量说明
+- **沙盒与自动运行**：Auto-Run in Sandbox、网络访问、Smart Allowlist 等
+- **子智能体**：Explore subagent、Max Mode、模型选择相关文案
+- **隐私与 Git**：Privacy Mode (Legacy)、分支前缀等
+
+`riskyShortWords` 补充 Appearance、Theme、Worktrees、Subagents 等设置侧栏短标签。
+
+### 3. 作用域替换（`scopedReplacements`）
+
+`src/i18n-core.js` 新增 `scopedReplacements`，处理编译后 bundle 中的固定字符串（侧栏分区 key、部分 `label:`/`return"` 模板、worktree 数量文案等），与词典扩充配套。
+
+### 4. 重复汉化时的备份策略
+
+若已存在 `.backup`，再次汉化时**不再**用备份覆盖当前文件，避免抹掉已应用的补丁；首次运行仍会创建备份。
+
+### 5. 其它
+
+- `.gitignore`：忽略 `.DS_Store`、`PR-HANDOFF.md`
+- **版本号**：`1.1.0`（upstream 当前为 `1.0.0`）
+
+### 与 upstream 的差异一览
+
+| 项目 | upstream `main` | 本 Fork `main` |
+|------|-----------------|----------------|
+| 版本 | 1.0.0 | **1.1.0** |
+| Tab 键位修复 | ❌ | ✅ |
+| 设置页词典扩充 | 基础 300+ 条 | **400+ 条** |
+| `scopedReplacements` | ❌ | ✅ |
+| 键位上下文保护 | ❌ | ✅ |
+
+同步 upstream 更新时建议：
+
+```bash
+git remote add upstream https://github.com/Wuyf5275/cursor-i18n-tool.git  # 若尚未添加
+git fetch upstream
+git merge upstream/main   # 解决冲突后保留本 Fork 的 dict / i18n-core 改动
+```
+
 ## 🤝 贡献指南
 
 ### 添加新的翻译词条
@@ -177,7 +247,8 @@ npm run build:mac
 **选择字典的原则：**
 
 - 长度 ≥ 20 字符 或 含 3 个以上单词 → `safeGlobalDict`
-- 短词（可能与代码中的变量名冲突）→ `riskyShortWords`（仅在 UI 属性上下文中替换）
+- 短词（可能与代码中的变量名冲突）→ `riskyShortWords`（仅在 UI 属性上下文中替换；**勿**将 `Tab` 等键名放入此表）
+- 设置侧栏 key、编译模板中的固定片段 → `i18n-core.js` 的 `scopedReplacements`
 
 ### 处理特殊格式的词条
 
